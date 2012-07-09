@@ -1,4 +1,5 @@
 #include "Controller.h"
+#include <stdio.h>
 
 mt_Controller::mt_Controller(unsigned int num_robots)
     : m_vqpControlLaws(num_robots),

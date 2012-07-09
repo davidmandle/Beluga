@@ -115,7 +115,7 @@ Beluga_VideoSetupDialog::Beluga_VideoSetupDialog(MT_Capture* capture,
     choices.empty();
     for(unsigned int i = 0; i < 4; i++)
     {
-        choices.Add(wxString(names[i]));
+      choices.Add(wxString(names[i].c_str(), wxConvUTF8));
     }
     
     for(unsigned int i = 0; i < 4; i++)
