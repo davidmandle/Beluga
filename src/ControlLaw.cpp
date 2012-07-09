@@ -1,4 +1,5 @@
 #include "ControlLaw.h"
+#include <stdio.h>
 
 unsigned int mt_ControlLaw::s_iMaxControlLawID = 0;
 std::string mt_ControlLaw::s_sName = std::string("mt_ControlLaw Base");

@@ -72,6 +72,9 @@ protected:
 	void runTracker();
 
     belugaIPCClient m_IPCClient;
+    MT_AgentStatesPublisher publisher;
+    MT_AgentStatesSubscriber subscriber;
+    MT_AgentStates received_agent_states;
     BELUGA_CONTROL_MODE m_ControlMode;
     double m_adWaypointX[4];
     double m_adWaypointY[4];
@@ -122,6 +125,7 @@ public:
 
 	void doUserStep();
 	void doUserControl();
+	void HandleNewMessage(MT_AgentStates agent_states);
 	void doUserGLDrawing();
 	void doSlaveGLDrawing(int slave_index);
 
