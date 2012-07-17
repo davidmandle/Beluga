@@ -45,8 +45,8 @@ BelugaTrackerFrame::BelugaTrackerFrame(wxFrame* parent,
     m_bConnectSocket(false),
     m_Controller(4 /* # robots */),
     m_IPCClient("127.0.0.1", 1234),
-    publisher(1235),
-    subscriber("localhost", "1236", boost::bind(&BelugaTrackerFrame::HandleNewMessage, this, _1)),
+    publisher(17771),
+    subscriber("localhost", "1236"),
     m_pBelugaControlFrame(NULL)
 {
   for(unsigned int i = 0; i < 4; i++)
@@ -634,7 +634,6 @@ void BelugaTrackerFrame::doUserControl()
       new_waypoint->set_y(m_adWaypointY[0]);
       new_waypoint->set_z(agent_state->tracked_agent_state().z());      
       publisher.Publish(agent_states);  
-      subscriber.RunUntilReceive();
       for (int i = 0; i < received_agent_states.agent_state_size(); i++) {
 	u[BELUGA_CONTROL_FWD_SPEED] = received_agent_states.agent_state(i).generic_agent_control().kinematics().speed();
 	u[BELUGA_CONTROL_STEERING] = received_agent_states.agent_state(i).generic_agent_control().kinematics().omega();
