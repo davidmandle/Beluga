@@ -998,11 +998,7 @@ void BelugaTrackerFrame::doCommonGLDrawing(int slave_index)
       if((m_adGotoXC[i][slave_index] >= 0 && m_adGotoYC[i][slave_index] >= 0 &&
 	  m_adGotoXC[i][slave_index] <= m_ClientSize.GetWidth() &&
 	  m_adGotoYC[i][slave_index] <= h))
-	{
-		if((m_adGotoXC[i][slave_index] >= 0 && m_adGotoYC[i][slave_index] >= 0 &&
-			m_adGotoXC[i][slave_index] <= m_ClientSize.GetWidth() &&
-			m_adGotoYC[i][slave_index] <= h))
-		{
+	{		
 			MT_DrawCircle(m_adGotoXC[i][slave_index],
 				h - m_adGotoYC[i][slave_index],
 				MT_Green, 15.0*m_dGotoDistThreshold);
