@@ -28,6 +28,8 @@ const unsigned int DEFAULT_H_THRESH_LOW = 10;
 const unsigned int DEFAULT_S_THRESH_LOW = 0;
 const unsigned int DEFAULT_S_THRESH_HIGH = 255;
 
+const double PI = 3.141592;
+const double DEFAULT_TANK_RADIUS = 3.2;
 const double DEFAULT_WATER_DEPTH = 2.286;
 
 /* tank radius in m, need not be the actual tank radius,
@@ -55,9 +57,9 @@ enum
     BELUGA_STATE_THETA,
     BELUGA_STATE_OMEGA,
     
-    BELUGA_NUM_STATES /* always the last one! */
+    BELUGA_NUM_STATES  // always the last one!
 };
-// TODO: These are fucked up
+/* TODO: These are fucked up */
 const unsigned int BELUGA_STATE_ORIENTATION = BELUGA_STATE_THETA;
 const unsigned int BELUGA_STATE_HEADING = BELUGA_STATE_THETA;
 
@@ -68,11 +70,11 @@ enum
     BELUGA_INPUT_FORWARD_SPEED,
     BELUGA_INPUT_STEERING,
     
-    BELUGA_NUM_INPUTS /* always the last one! */
+    BELUGA_NUM_INPUTS  // always the last one!
 };
 
 /* measurement indeces
- * NOTE:  this assumes a signle (x, y, theta) measurement
+ * NOTE:  this assumes a single (x, y, theta) measurement
  *         (i.e., a single blob in a single camera) -
  *         we handle the n-measurement case in code,
  *         which relies on Z being the last measurement*/
@@ -83,7 +85,7 @@ enum
     BELUGA_MEAS_THETA,
     BELUGA_MEAS_Z,
 
-    BELUGA_NUM_MEAS /* always the last one! */
+    BELUGA_NUM_MEAS  // always the last one!
 };
 
 /* UKF alpha parameter */
@@ -92,20 +94,20 @@ const double BELUGA_UKF_ALPHA = 0.1;
 /* fitted dynamics constants */
 const double K_t = 1.03;
 const double K_d1 = 45.0;
-const double m_0 = 7.4; // kg
-const double m_1 = 6.0; // kg
-const double m_eff = m_0 + m_1; // kg
+const double m_0 = 7.4;  // kg
+const double m_1 = 6.0;  // kg
+const double m_eff = m_0 + m_1;  // kg
 const double r_1 = 0.35;
 const double K_omega = 7.0;
 const double eta_up = 5.0e-4;
 const double eta_down = 4.0e-4;
 const double v_off = 0.2;
-const double k_d = 1.0; // original: 70.0;
+const double k_d = 1.0;  // original: 70.0;
 const double z_off = 0.75;
 const double k_teth = 1.1;
-const double k_vp = 11.25; // linear coefficient in voltage->power
-                           // curve
-const double J = 2.5; // kg*m^2 moment of inertia
+const double k_vp = 11.25;  // linear coefficient in voltage->power
+                            // curve
+const double J = 2.5;  // kg*m^2 moment of inertia
 
 /* state constraints */
 const double BELUGA_CONSTRAINT_MAX_SPEED = 100.0; 
@@ -151,7 +153,7 @@ enum
 	BELUGA_CONTROL_STEERING,
 	BELUGA_CONTROL_VERT_SPEED,
 
-	BELUGA_CONTROL_SIZE /* must always be the last one */
+	BELUGA_CONTROL_SIZE  // always the last one!
 };
 
 enum
@@ -159,7 +161,7 @@ enum
 	BELUGA_ROBOT_MEASUREMENT_DEPTH = 0,
     BELUGA_ROBOT_MEASUREMENT_DEPTH_RAW,
 
-	BELUGA_ROBOT_MEASUREMENT_SIZE /* must always be the last one */
+	BELUGA_ROBOT_MEASUREMENT_SIZE  // always the last one!
 };
 
 /**********************************************************************
@@ -172,7 +174,7 @@ enum
     BELUGA_WAYPOINT_Y,
     BELUGA_WAYPOINT_Z,
 
-    BELUGA_WAYPOINT_SIZE /* must always be the last one */
+    BELUGA_WAYPOINT_SIZE  // always the last one!
 };
 
 /* we can use negative z to specify that we want to maintain depth
@@ -195,4 +197,4 @@ const double BELUGA_CONTROL_NONE = 0.0;
  * the turning angle, we divide by sign(speed)*BELUGA_MIN_TURNING_SPEED */
 const double BELUGA_MIN_TURNING_SPEED = 0.2;
 
-#endif // BELUGA_CONSTANTS
+#endif  // BELUGA_CONSTANTS

@@ -34,26 +34,30 @@ BelugaTrackerFrame::BelugaTrackerFrame(wxFrame* parent,
 				       const wxSize& size,     
 				       long style)
   : MT_RobotFrameBase(parent, id, title, pos, size, style),
-    m_iNToTrack(2),
-    m_dGotoDist(50.0),
-    m_dGotoMaxSpeed(15.0),
-    m_dGotoTurningGain(25.0),
-    m_bControlActive(false),
-    m_iGrabbedTrackedObj(NO_ROBOT),
-    m_bGotoActive(false),
-    m_bCamerasReady(false),
-    m_bConnectSocket(false),
+    m_iNToTrack(1 /* SET THIS EQUAL TO THE NUMBER OF VEHICLES */),
+	m_dGotoMaxSpeed(15.0),	
+	m_dGotoDistThreshold(50.0),
+	m_dGotoTurningGain(25.0),
+	m_dBoundaryGain(1e-6),
+/*	m_sForceFileNameX("../../src/Boundary_ForcesX.txt"),
+	m_sForceFileNameY("../../src/Boundary_ForcesY.txt"), */
+	m_bControlActive(false),
+	m_iGrabbedTrackedObj(NO_ROBOT),
+	m_bGotoActive(false),
+	m_bCamerasReady(false),
+	m_bConnectSocket(false),
     m_Controller(4 /* # robots */),
     m_IPCClient("127.0.0.1", 1234),
     publisher(17771),
     subscriber("localhost", "1236"),
     m_pBelugaControlFrame(NULL)
 {
-  for(unsigned int i = 0; i < 4; i++)
-    {
-      m_pSlaves[i] = NULL;
-      m_apWaypointController[i] = NULL;
-      m_apLowLevelController[i] = NULL;
+	for(unsigned int i = 0; i < 4; i++)
+	{
+        m_pSlaves[i] = NULL;
+        m_apWaypointController[i] = NULL;
+		m_apBoundaryController[i] = NULL;
+        m_apLowLevelController[i] = NULL;
 
       for(unsigned int j = 0; j < 4; j++)
         {
@@ -73,7 +77,12 @@ BelugaTrackerFrame::~BelugaTrackerFrame()
 	  delete m_apWaypointController[i];
 	  m_apWaypointController[i] = NULL;
         }
-      if(m_apLowLevelController[i])
+		if(m_apBoundaryController[i])
+        {
+            delete m_apBoundaryController[i];
+            m_apBoundaryController[i] = NULL;
+        }
+        if(m_apLowLevelController[i])
         {
 	  delete m_apLowLevelController[i];
 	  m_apLowLevelController[i] = NULL;
@@ -112,74 +121,79 @@ void BelugaTrackerFrame::initUserData()
     }
     
   MT_RobotFrameBase::initUserData();
-    
-  m_CmdLineParser.AddOption(wxT("n"),
-			    wxT("num_to_track"),
-			    wxT("Number of objects to track. Default is 3."),
-			    wxCMD_LINE_VAL_NUMBER);
+    m_CmdLineParser.AddOption(wxT("n"),
+                              wxT("num_to_track"),
+                              wxT("Number of objects to track. Default is 3."),
+                              wxCMD_LINE_VAL_NUMBER);
 
-  m_pPreferences->AddDouble("Goto Cutoff Distance",
-			    &m_dGotoDist,
-			    MT_DATA_READWRITE,
-			    0);
-  m_pPreferences->AddDouble("Goto Max Speed",
-			    &m_dGotoMaxSpeed,
-			    MT_DATA_READWRITE,
-			    0);
-  m_pPreferences->AddDouble("Goto Turning Gain",
-			    &m_dGotoTurningGain);
+	m_pPreferences->AddDouble("Goto Max Speed",
+                              &m_dGotoMaxSpeed,
+                              MT_DATA_READWRITE,
+                              0);
+	m_pPreferences->AddDouble("Goto Cutoff Distance",
+                              &m_dGotoDistThreshold,
+                              MT_DATA_READWRITE,
+                              0);
+	m_pPreferences->AddDouble("Goto Turning Gain",
+                              &m_dGotoTurningGain);
+	m_pPreferences->AddDouble("Boundary Gain",
+							  &m_dBoundaryGain);
+	m_pPreferences->AddString("X Force File Name",
+							&m_sForceFileNameX);
+	m_pPreferences->AddString("Y Force File Name",
+							&m_sForceFileNameY);
 
-  std::vector<std::string> botnames;
-  for(unsigned int i = 0; i < 7; i++)
+    std::vector<std::string> botnames;
+    for(unsigned int i = 0; i < 7; i++)
     {
       botnames.push_back(RobotNames[i]);
     }
-  m_Robots.SetRobotNames(botnames);
+    m_Robots.SetRobotNames(botnames);
 
-  m_pSetupInfo = new MT_DataGroup("Camera Setup Info");
-  m_pSetupInfo->AddString("Quadrant I Calibration",
-			  &m_sQuad1CalibrationPath);
-  m_pSetupInfo->AddString("Quadrant I Camera",
-			  &m_sQuad1Camera);
-  m_pSetupInfo->AddString("Quadrant II Calibration",
-			  &m_sQuad2CalibrationPath);
-  m_pSetupInfo->AddString("Quadrant II Camera",
-			  &m_sQuad2Camera);
-  m_pSetupInfo->AddString("Quadrant III Calibration",
-			  &m_sQuad3CalibrationPath);
-  m_pSetupInfo->AddString("Quadrant III Camera",
-			  &m_sQuad3Camera);
-  m_pSetupInfo->AddString("Quadrant IV Calibration",
-			  &m_sQuad4CalibrationPath);
-  m_pSetupInfo->AddString("Quadrant IV Camera",
-			  &m_sQuad4Camera);
-  m_pSetupInfo->AddString("Quadrant I Mask",
-			  &m_sQuad1MaskPath);
-  m_pSetupInfo->AddString("Quadrant II Mask",
-			  &m_sQuad2MaskPath);
-  m_pSetupInfo->AddString("Quadrant III Mask",
-			  &m_sQuad3MaskPath);
-  m_pSetupInfo->AddString("Quadrant IV Mask",
-			  &m_sQuad4MaskPath);
+    m_pSetupInfo = new MT_DataGroup("Camera Setup Info");
+    m_pSetupInfo->AddString("Quadrant I Calibration",
+                            &m_sQuad1CalibrationPath);
+    m_pSetupInfo->AddString("Quadrant I Camera",
+                            &m_sQuad1Camera);
+    m_pSetupInfo->AddString("Quadrant II Calibration",
+                            &m_sQuad2CalibrationPath);
+    m_pSetupInfo->AddString("Quadrant II Camera",
+                            &m_sQuad2Camera);
+    m_pSetupInfo->AddString("Quadrant III Calibration",
+                            &m_sQuad3CalibrationPath);
+    m_pSetupInfo->AddString("Quadrant III Camera",
+                            &m_sQuad3Camera);
+    m_pSetupInfo->AddString("Quadrant IV Calibration",
+                            &m_sQuad4CalibrationPath);
+    m_pSetupInfo->AddString("Quadrant IV Camera",
+                            &m_sQuad4Camera);
+    m_pSetupInfo->AddString("Quadrant I Mask",
+                            &m_sQuad1MaskPath);
+    m_pSetupInfo->AddString("Quadrant II Mask",
+                            &m_sQuad2MaskPath);
+    m_pSetupInfo->AddString("Quadrant III Mask",
+                            &m_sQuad3MaskPath);
+    m_pSetupInfo->AddString("Quadrant IV Mask",
+                            &m_sQuad4MaskPath);
 
-  initController();
-                            
-  setTimer(FRAME_PERIOD_MSEC);
+    setTimer(FRAME_PERIOD_MSEC);
 
 }
 
 void BelugaTrackerFrame::writeUserXML()
 {
-  MT_RobotFrameBase::writeUserXML();
-
-  WriteDataGroupToXML(&m_XMLSettingsFile, m_pSetupInfo);
+    MT_RobotFrameBase::writeUserXML();
+ 
+    WriteDataGroupToXML(&m_XMLSettingsFile, m_pSetupInfo);
 }
 
 void BelugaTrackerFrame::readUserXML()
 {
   MT_RobotFrameBase::readUserXML();
+    ReadDataGroupFromXML(m_XMLSettingsFile, m_pSetupInfo);
 
-  ReadDataGroupFromXML(m_XMLSettingsFile, m_pSetupInfo);
+    /* THIS SHOULD NOT HAPPEN HERE - THIS IS A HACK */
+	initController();
 }
 
 void BelugaTrackerFrame::makeFileMenu(wxMenu* file_menu)
@@ -234,18 +248,21 @@ void BelugaTrackerFrame::initController()
     
   for(unsigned int i = 0; i < 4; i++)
     {
-      m_apWaypointController[i] = new BelugaWaypointControlLaw();
-      m_apLowLevelController[i] = new BelugaLowLevelControlLaw();
-      m_Controller.appendControlLawToBot(i, m_apWaypointController[i], mt_CONTROLLER_NO_GC);
-      m_Controller.appendControlLawToBot(i, m_apLowLevelController[i], mt_CONTROLLER_NO_GC);
+		printf("Trying to load force file |%s|\n", m_sForceFileNameX.c_str());
+        m_apWaypointController[i] = new BelugaWaypointControlLaw();
+        m_apBoundaryController[i] = new BelugaBoundaryControlLaw(m_sForceFileNameX.c_str(), m_sForceFileNameY.c_str());
+		m_apLowLevelController[i] = new BelugaLowLevelControlLaw();
+        m_Controller.appendControlLawToBot(i, m_apWaypointController[i], mt_CONTROLLER_NO_GC);
+		m_Controller.appendControlLawToBot(i, m_apBoundaryController[i], mt_CONTROLLER_NO_GC);
+		m_Controller.appendControlLawToBot(i, m_apLowLevelController[i], mt_CONTROLLER_NO_GC);
 
-      m_adWaypointX[i] = BELUGA_WAYPOINT_NONE;
-      m_adWaypointY[i] = BELUGA_WAYPOINT_NONE;
-      m_adWaypointZ[i] = BELUGA_WAYPOINT_NONE;
+        m_adWaypointX[i] = BELUGA_WAYPOINT_NONE;
+        m_adWaypointY[i] = BELUGA_WAYPOINT_NONE;
+        m_adWaypointZ[i] = BELUGA_WAYPOINT_NONE;
 
-      m_adSpeedCommand[i] = BELUGA_CONTROL_NONE;
-      m_adOmegaCommand[i] = BELUGA_CONTROL_NONE;
-      m_adZDotCommand[i] = BELUGA_CONTROL_NONE;	   
+        m_adSpeedCommand[i] = BELUGA_CONTROL_NONE;
+        m_adOmegaCommand[i] = BELUGA_CONTROL_NONE;
+        m_adZDotCommand[i] = BELUGA_CONTROL_NONE;	   
     }
 }
 
@@ -418,10 +435,22 @@ void BelugaTrackerFrame::doIPCExchange()
 	}
         
       BELUGA_CONTROL_MODE mode;
-        
-      bool r = m_IPCClient.setAllPositions(&X, &Y, &Z);
-      r &= m_IPCClient.getControls(robots, &mode, &X, &Y, &Z);
-      if(!r)
+        bool r = m_IPCClient.setAllPositions(&X, &Y, &Z);
+        r &= m_IPCClient.getControls(robots, &mode, &X, &Y, &Z);
+		
+		// set timing and maxSpeed parameters for WaypointControlLaw (m_dTiming & m_dMaxSpeed) from IPC
+		double timing = 0;
+		std::string params("");
+		r &= m_IPCClient.getParams(&params);
+		sscanf(params.c_str(), "%f", &timing);
+		double maxSpeed = 1.5*((2*DEFAULT_TANK_RADIUS)/timing)*1000;
+		for(unsigned int i = 0; i < 4; i++)
+		{
+			m_apWaypointController[i]->m_dTiming = timing;
+			m_apWaypointController[i]->m_dMaxSpeed = maxSpeed;
+		}
+		
+        if(!r)
         {
 	  MT_ShowErrorDialog(this, wxT("Error during exchange with IPC server."));
 	  return;
@@ -533,7 +562,6 @@ void BelugaTrackerFrame::doUserControl()
         }
       return;
     }
-
   mt_dVectorCollection_t X_all(4);
   mt_dVectorCollection_t u_in_all(4);
   MT_AgentStates agent_states;
@@ -971,13 +999,51 @@ void BelugaTrackerFrame::doCommonGLDrawing(int slave_index)
 	  m_adGotoXC[i][slave_index] <= m_ClientSize.GetWidth() &&
 	  m_adGotoYC[i][slave_index] <= h))
 	{
-	  MT_DrawCircle(m_adGotoXC[i][slave_index],
-			h - m_adGotoYC[i][slave_index],
-			MT_Green, 15.0*m_dGotoDist);
+		if((m_adGotoXC[i][slave_index] >= 0 && m_adGotoYC[i][slave_index] >= 0 &&
+			m_adGotoXC[i][slave_index] <= m_ClientSize.GetWidth() &&
+			m_adGotoYC[i][slave_index] <= h))
+		{
+			MT_DrawCircle(m_adGotoXC[i][slave_index],
+				h - m_adGotoYC[i][slave_index],
+				MT_Green, 15.0*m_dGotoDistThreshold);
+		}
 	}
-    }
-  glLineWidth(1.0);
-    
+	glLineWidth(1.0);
+
+	if(m_pTracker)
+	{
+		double x = 0;
+	    double y = 0;
+		double fx = 0;
+		double fy = 0;
+
+		int ti;
+		std::vector<double> curr_state;
+		for(unsigned int i = 0; i < MT_MAX_NROBOTS; i++)
+		{
+			ti = m_Robots.TrackingIndex[i];
+			if(ti != MT_NOT_TRACKED)
+			{
+				x = m_pBelugaTracker->getBelugaCameraX(ti, slave_index);
+				y = m_pBelugaTracker->getBelugaCameraY(ti, slave_index);
+
+				m_apBoundaryController[i]->getLastForce(&fx, &fy);
+
+				MT_R3 center(x, m_ClientSize.GetHeight() - y, 0);
+				double length = sqrt(fx*fx + fy*fy);
+				double orientation = atan2(fy, fx);
+
+				//printf("fx = %f, fy = %f, length = %f, orientation = %f\n", fx, fy, length, orientation);
+
+				if(length > 0)
+				{
+					MT_DrawArrow(center, length, orientation, MT_White, 1);
+				}
+
+			}
+		}
+
+	}
 }
 
 

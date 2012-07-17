@@ -350,7 +350,7 @@ void Beluga::SendCommand(double fwd_speed, double up_speed, double turn)
        positions is the neutral (straight forward) position */
     double half_speed = 0.5*((double) (BELUGA_SERVO_MIN + BELUGA_SERVO_MAX));
 
-    servo_cmd = MT_CLAMP(half_speed + turn,
+    servo_cmd = MT_CLAMP(half_speed - turn,
                          BELUGA_SERVO_MIN,
                          BELUGA_SERVO_MAX);
 

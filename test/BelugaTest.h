@@ -32,6 +32,7 @@ double randomfloat()
     return 3*(f - 0.5);
 }
 
+/* eq_wf compares floating point numbers by value rather than binary representation  */
 bool eq_wf(double a, double b)
 {
     char a_s[16];

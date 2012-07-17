@@ -5,3 +5,5 @@ cgi/is_*
 cgi/positions_*
 tmp_*
 test/*.dat
+.DS_Store
+test/*.o

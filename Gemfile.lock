@@ -1,6 +1,6 @@
 GIT
   remote: git://github.com/leonard-lab/BelugaIPC.git
-  revision: f16693d025e8b40e9a1f1c7bd63701b2990f7189
+  revision: 33663b25777c8a7f5383f88114323e84ae34da3f
   specs:
     beluga_ipc (0.1.1)
 
