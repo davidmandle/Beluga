@@ -24,7 +24,8 @@ public:
 	void Update(std::vector<double> state);
 	double GetX() const;
 	double GetY() const;
-	double GetTheta() const;
+	double GetTheta() const;	
+
 	void SetState(std::vector<double> state);
 	void SetControl(std::vector<double> u);
 	std::vector<double> GetState();
@@ -74,6 +75,21 @@ private:
 	unsigned int m_iDepthMeasAtSurface;
 	unsigned int m_iDepthMeasAtBottom;
 	double m_dWaterDepth;
+
+	double m_dK_t;
+	double m_dK_d1;
+	double m_dm_0;
+	double m_dm_1;
+	double m_dr_1;
+	double m_dK_omega;
+	double m_deta_up;
+	double m_deta_down;
+	double m_dv_off;
+	double m_dk_d;
+	double m_dz_off;
+	double m_dk_teth;
+	double m_dk_vp;
+	double m_dJ;
 
 	double m_dTimeOfLastSend;
     

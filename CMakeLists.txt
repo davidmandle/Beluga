@@ -61,6 +61,3 @@ add_executable(${APP_NAME} WIN32 MACOSX_BUNDLE ${APP_SRC})
 
 # sets up the app to build correctly using the right libraries, etc
 MT_robot_app(${APP_NAME})
-
-find_package(Boost 1.36.0 COMPONENTS system)
-target_link_libraries(${APP_NAME} ${Boost_LIBRARIES})

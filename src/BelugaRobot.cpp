@@ -66,6 +66,21 @@ void Beluga::doCommonInit()
     m_dTurnDeadBand = BELUGA_DEFAULT_TURN_DEADBAND;
     m_dVertSpeed = 0;
 
+	m_dK_t = BELUGA_DEFAULT_K_T;
+	m_dK_d1 = BELUGA_DEFAULT_K_D1;
+	m_dm_0 = BELUGA_DEFAULT_M_0;
+	m_dm_1 = BELUGA_DEFAULT_M_1;
+	m_dr_1 = BELUGA_DEFAULT_R_1;
+	m_dK_omega = BELUGA_DEFAULT_K_OMEGA;
+	m_deta_up = BELUGA_DEFAULT_ETA_UP;
+	m_deta_down = BELUGA_DEFAULT_ETA_DOWN;
+	m_dv_off = BELUGA_DEFAULT_V_OFF;
+	m_dk_d = BELUGA_DEFAULT_K_D;
+	m_dz_off = BELUGA_DEFAULT_Z_OFF;
+	m_dk_teth = BELUGA_DEFAULT_K_TETH;
+	m_dk_vp = BELUGA_DEFAULT_K_VP;
+	m_dJ = BELUGA_DEFAULT_J;
+
 	m_vdState.resize(BELUGA_NUM_STATES, 0.0),
 	m_vdControls.resize(BELUGA_CONTROL_SIZE, 0.0),
 
@@ -121,7 +136,62 @@ void Beluga::doCommonInit()
 						   MT_DATA_READWRITE,
 						   0,
 						   1000);
-
+	m_pParameters->AddDouble("K t",
+		                     &m_dK_t,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("K d1",
+		                     &m_dK_d1,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("m 0",
+		                     &m_dm_0,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("m 1",
+		                     &m_dm_1,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("r 1",
+		                     &m_dr_1,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("K omega",
+		                     &m_dK_omega,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("eta up",
+		                     &m_deta_up,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("eta down",
+		                     &m_deta_down,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("v off",
+		                     &m_dv_off,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("k d",
+		                     &m_dk_d,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("z off",
+		                     &m_dz_off,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("k teth",
+		                     &m_dk_teth,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("k vp",
+		                     &m_dk_vp,
+							 MT_DATA_READWRITE,
+							 0);
+	m_pParameters->AddDouble("J",
+		                     &m_dJ,
+							 MT_DATA_READWRITE,
+							 0);
 }
 
 void Beluga::Update(std::vector<double> state)
@@ -333,7 +403,7 @@ void Beluga::JoyStickControl(std::vector<double> js_axes,
 		vert = -m_dVertSpeed;
 	}
 #endif
-	SendCommand(speed, vert, turn);
+	SendCommand(speed, vert, turn);	
 	m_vdControls[BELUGA_CONTROL_FWD_SPEED] = speed;
 	m_vdControls[BELUGA_CONTROL_STEERING] = turn;
 	m_vdControls[BELUGA_CONTROL_VERT_SPEED] = vert;
@@ -343,16 +413,17 @@ void Beluga::SendCommand(double fwd_speed, double up_speed, double turn)
 {
 	m_vdControls[BELUGA_CONTROL_FWD_SPEED] = fwd_speed;
 	m_vdControls[BELUGA_CONTROL_STEERING] = turn;
-	m_vdControls[BELUGA_CONTROL_VERT_SPEED] = up_speed;
+	m_vdControls[BELUGA_CONTROL_VERT_SPEED] = up_speed;	
 
 	unsigned int servo_cmd;
     /* assuming that halfway between the minimum and maximum servo
        positions is the neutral (straight forward) position */
     double half_speed = 0.5*((double) (BELUGA_SERVO_MIN + BELUGA_SERVO_MAX));
 
+	turn = MT_CLAMP(turn, -m_dMaxTurn, m_dMaxTurn);
     servo_cmd = MT_CLAMP(half_speed - turn,
                          BELUGA_SERVO_MIN,
-                         BELUGA_SERVO_MAX);
+                         BELUGA_SERVO_MAX);	  
 
 	unsigned int vert_spd_cmd;
     char vert_d = 0;
@@ -362,7 +433,7 @@ void Beluga::SendCommand(double fwd_speed, double up_speed, double turn)
         vert_d = 1;
     }
     
-    vert_spd_cmd = MT_CLAMP(fabs(up_speed), 0, BELUGA_MAX_VERT_SPEED);
+    vert_spd_cmd = MT_CLAMP(fabs(up_speed), 0, m_dMaxVertSpeed);
     vert_spd_cmd += 100*vert_d;
 
     unsigned int spd_cmd;
@@ -374,9 +445,13 @@ void Beluga::SendCommand(double fwd_speed, double up_speed, double turn)
         d = 1;
     }
 
-    spd_cmd = MT_CLAMP(fabs(fwd_speed), 0, BELUGA_MAX_SPEED);
+    spd_cmd = MT_CLAMP(fabs(fwd_speed), 0, m_dMaxSpeed);
     /* makes sure the first digit is 1 if the speed was negative */
     spd_cmd += 100*d;
+
+std::ostringstream debug_stream;
+      debug_stream << "Command: speed " << spd_cmd << ", vert " << vert_spd_cmd << ", turn " << servo_cmd << std::endl;
+      OutputDebugString(debug_stream.str().c_str());
 
 	char cmd[] = "$123!456!789!";
 	sprintf(cmd, "$%03d!%03d!%03d!", vert_spd_cmd, spd_cmd, servo_cmd);

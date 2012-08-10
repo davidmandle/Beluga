@@ -91,23 +91,21 @@ enum
 /* UKF alpha parameter */
 const double BELUGA_UKF_ALPHA = 0.1;
 
-/* fitted dynamics constants */
-const double K_t = 1.03;
-const double K_d1 = 45.0;
-const double m_0 = 7.4;  // kg
-const double m_1 = 6.0;  // kg
-const double m_eff = m_0 + m_1;  // kg
-const double r_1 = 0.35;
-const double K_omega = 7.0;
-const double eta_up = 5.0e-4;
-const double eta_down = 4.0e-4;
-const double v_off = 0.2;
-const double k_d = 1.0;  // original: 70.0;
-const double z_off = 0.75;
-const double k_teth = 1.1;
-const double k_vp = 11.25;  // linear coefficient in voltage->power
-                            // curve
-const double J = 2.5;  // kg*m^2 moment of inertia
+const double BELUGA_DEFAULT_K_T = 1.03;
+const double BELUGA_DEFAULT_K_D1 = 45.0;
+const double BELUGA_DEFAULT_M_0 = 7.4; // kg
+const double BELUGA_DEFAULT_M_1 = 6.0; // kg
+const double BELUGA_DEFAULT_R_1 = 0.35;
+const double BELUGA_DEFAULT_K_OMEGA = 7.0;
+const double BELUGA_DEFAULT_ETA_UP = 5.0e-4;
+const double BELUGA_DEFAULT_ETA_DOWN = 4.0e-4;
+const double BELUGA_DEFAULT_V_OFF = 0.2;
+const double BELUGA_DEFAULT_K_D = 1.0;
+const double BELUGA_DEFAULT_Z_OFF = 0.75;
+const double BELUGA_DEFAULT_K_TETH = 1.1;
+const double BELUGA_DEFAULT_K_VP = 11.25; // linear coefficient in voltage->power
+										// curve
+const double BELUGA_DEFAULT_J = 2.5; // kg*m^2 moment of inertia
 
 /* state constraints */
 const double BELUGA_CONSTRAINT_MAX_SPEED = 100.0; 
@@ -124,7 +122,7 @@ const bool BELUGA_HANDSHAKING = false;
 
 const double BELUGA_MAX_SPEED = 45;
 const double BELUGA_MAX_VERT_SPEED = 45;
-const double BELUGA_MAX_TURN = 68.5;
+const double BELUGA_MAX_TURN = 20;
 const double BELUGA_DEFAULT_SPEED_DEADBAND = 0.05;
 const double BELUGA_DEFAULT_TURN_DEADBAND = 0.05;
 

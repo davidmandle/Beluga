@@ -79,7 +79,9 @@ bool BelugaSegmenter::areAdjacent(MT_DSGYA_Blob* obj, const YABlob& blob)
 /* Constructor - this gets called when we create a new instance of
  * this class.  It should initialize all of the member variables and
  * do whatever memory allocation is necessary. */
-BelugaTracker::BelugaTracker(IplImage* ProtoFrame, unsigned int n_obj)
+BelugaTracker::BelugaTracker(IplImage* ProtoFrame,
+							unsigned int n_obj
+							)
     : MT_TrackerBase(ProtoFrame),
       m_dWaterDepth(DEFAULT_WATER_DEPTH),
       m_iBlobValThresh(DEFAULT_BG_THRESH),
@@ -1159,6 +1161,21 @@ void BelugaTracker::applyUKFToObject(unsigned int obj_number)
        above.  */
     BelugaDynamicsParameters::m_dDt = m_dDt;
     BelugaDynamicsParameters::m_dWaterDepth = m_dWaterDepth;
+	BelugaDynamicsParameters::m_dK_t = m_vdK_t[obj_number];
+	BelugaDynamicsParameters::m_dK_d1 = m_vdK_d1[obj_number];
+	BelugaDynamicsParameters::m_dm_0 = m_vdm_0[obj_number];
+	BelugaDynamicsParameters::m_dm_1 = m_vdm_1[obj_number];
+	BelugaDynamicsParameters::m_dr_1 = m_vdr_1[obj_number];
+	BelugaDynamicsParameters::m_dK_omega = m_vdK_omega[obj_number];
+	BelugaDynamicsParameters::m_deta_up = m_vdeta_up[obj_number];
+	BelugaDynamicsParameters::m_deta_down = m_vdeta_down[obj_number];
+	BelugaDynamicsParameters::m_dv_off = m_vdv_off[obj_number];
+	BelugaDynamicsParameters::m_dk_d = m_vdk_d[obj_number];
+	BelugaDynamicsParameters::m_dz_off = m_vdz_off[obj_number];
+	BelugaDynamicsParameters::m_dk_teth = m_vdk_teth[obj_number];
+	BelugaDynamicsParameters::m_dk_vp = m_vdk_vp[obj_number];
+	BelugaDynamicsParameters::m_dJ = m_vdJ[obj_number];
+
     MT_UKFPredict(m_vpUKF[obj_number],
                   &beluga_dynamics,
                   &beluga_measurement,
@@ -1509,12 +1526,40 @@ std::vector<double> BelugaTracker::getBelugaState(unsigned int i)
 void BelugaTracker::setRobotData(const std::vector<double>& depth_meas,
 		const std::vector<double>& speed,
 		const std::vector<double>& vert,
-		const std::vector<double>& turn)
+		const std::vector<double>& turn,
+		const std::vector<double>& vdK_t,
+		const std::vector<double>& vdK_d1,
+		const std::vector<double>& vdm_0,
+		const std::vector<double>& vdm_1,
+		const std::vector<double>& vdr_1,
+		const std::vector<double>& vdK_omega,
+		const std::vector<double>& vdeta_up,
+		const std::vector<double>& vdeta_down,
+		const std::vector<double>& vdv_off,
+		const std::vector<double>& vdk_d,
+		const std::vector<double>& vdz_off,
+		const std::vector<double>& vdk_teth,
+		const std::vector<double>& vdk_vp,
+		const std::vector<double>& vdJ)
 {
 	m_vdDepthMeasurement = depth_meas;
 	m_vdSpeedCommand = speed;
 	m_vdVerticalCommand = vert;
 	m_vdTurnCommand = turn;
+	m_vdK_t = vdK_t;
+	m_vdK_d1 = vdK_d1;
+	m_vdm_0 = vdm_0;
+	m_vdm_1 = vdm_1;
+	m_vdr_1 = vdr_1;
+	m_vdK_omega = vdK_omega;
+	m_vdeta_up = vdeta_up;
+	m_vdeta_down = vdeta_down;
+	m_vdv_off = vdv_off;
+	m_vdk_d = vdk_d;
+	m_vdz_off = vdz_off;
+	m_vdk_teth = vdk_teth;
+	m_vdk_vp = vdk_vp;
+	m_vdJ = vdJ;
 }
 
 void BelugaTracker::getWorldXYZFromImageXYAndDepthInCamera(double* x,

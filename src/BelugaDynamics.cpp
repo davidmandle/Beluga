@@ -6,6 +6,20 @@
 
 double BelugaDynamicsParameters::m_dDt = 1.0;
 double BelugaDynamicsParameters::m_dWaterDepth = DEFAULT_WATER_DEPTH;
+double BelugaDynamicsParameters::m_dK_t = BELUGA_DEFAULT_K_T;
+double BelugaDynamicsParameters::m_dK_d1 = BELUGA_DEFAULT_K_D1;
+double BelugaDynamicsParameters::m_dm_0 = BELUGA_DEFAULT_M_0;
+double BelugaDynamicsParameters::m_dm_1 = BELUGA_DEFAULT_M_1;
+double BelugaDynamicsParameters::m_dr_1 = BELUGA_DEFAULT_R_1;
+double BelugaDynamicsParameters::m_dK_omega = BELUGA_DEFAULT_K_OMEGA;
+double BelugaDynamicsParameters::m_deta_up = BELUGA_DEFAULT_ETA_UP;
+double BelugaDynamicsParameters::m_deta_down = BELUGA_DEFAULT_ETA_DOWN;
+double BelugaDynamicsParameters::m_dv_off = BELUGA_DEFAULT_V_OFF;
+double BelugaDynamicsParameters::m_dk_d = BELUGA_DEFAULT_K_D;
+double BelugaDynamicsParameters::m_dz_off = BELUGA_DEFAULT_Z_OFF;
+double BelugaDynamicsParameters::m_dk_teth = BELUGA_DEFAULT_K_TETH;
+double BelugaDynamicsParameters::m_dk_vp = BELUGA_DEFAULT_K_VP;
+double BelugaDynamicsParameters::m_dJ = BELUGA_DEFAULT_J;
 
 double check_nan(double value, double predicted, double default_val)
 {
@@ -72,13 +86,14 @@ void beluga_dynamics(const CvMat* x_k,
     y += dT*v*sin(theta);
 
     /* vdot dynamics */
-    double vdot = (K_t*u_h - K_d1*v)/m_eff;
+	double m_eff = BelugaDynamicsParameters::m_dm_0 + BelugaDynamicsParameters::m_dm_1;
+	double vdot = (BelugaDynamicsParameters::m_dK_t*u_h - BelugaDynamicsParameters::m_dK_d1*v)/m_eff;
     v += dT*vdot;
 
     /* steering dynamics */
     theta += dT*omega;
 
-    double omegadot = (r_1*u_steer*K_t*u_h - K_omega*omega)/J;
+    double omegadot = (BelugaDynamicsParameters::m_dr_1*u_steer*BelugaDynamicsParameters::m_dK_t*u_h - BelugaDynamicsParameters::m_dK_omega*omega)/BelugaDynamicsParameters::m_dJ;
     omega += dT*omegadot;
 
     /* vertical dynamics */
@@ -96,11 +111,11 @@ void beluga_dynamics(const CvMat* x_k,
         u_down = u_h;
         u_up = 0;
     }
-    double v_vert_inv = 1.0/(fabs(zdot) + v_off);
-    double zddot = (1/m_eff)*(eta_up*v_vert_inv*(u_up*u_up + k_vp*u_up)
-                              + eta_down*v_vert_inv*(u_down + k_vp*u_down)
-                              - k_d*fabs(zdot)*zdot
-                              + k_teth*(z_off - z));
+    double v_vert_inv = 1.0/(fabs(zdot) + BelugaDynamicsParameters::m_dv_off);	
+    double zddot = (1/m_eff)*(BelugaDynamicsParameters::m_deta_up*v_vert_inv*(u_up*u_up + BelugaDynamicsParameters::m_dk_vp*u_up)
+                              + BelugaDynamicsParameters::m_deta_down*v_vert_inv*(u_down + BelugaDynamicsParameters::m_dk_vp*u_down)
+                              - BelugaDynamicsParameters::m_dk_d*fabs(zdot)*zdot
+                              + BelugaDynamicsParameters::m_dk_teth*(BelugaDynamicsParameters::m_dz_off - z));
 /*	printf("u_h %f, z %f, zdot %f, zddot %f, drag %f, teth %f, dT %f\n", u_h, z, zdot, zddot, 
 		-k_d*fabs(zdot)*zdot, k_teth*(z_off - z), dT);*/
     zdot += dT*zddot;

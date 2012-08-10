@@ -167,6 +167,21 @@ private:
 	std::vector<double> m_vdVerticalCommand;
 	std::vector<double> m_vdTurnCommand;
 
+	std::vector<double> m_vdK_t;
+	std::vector<double> m_vdK_d1;
+	std::vector<double> m_vdm_0;
+	std::vector<double> m_vdm_1;
+	std::vector<double> m_vdr_1;
+	std::vector<double> m_vdK_omega;
+	std::vector<double> m_vdeta_up;
+	std::vector<double> m_vdeta_down;
+	std::vector<double> m_vdv_off;
+	std::vector<double> m_vdk_d;
+	std::vector<double> m_vdz_off;
+	std::vector<double> m_vdk_teth;
+	std::vector<double> m_vdk_vp;
+	std::vector<double> m_vdJ;
+
 	std::vector<bool> m_vbLastMeasValid;
 	std::vector<t_p_history> m_vdHistories_X;
     std::vector<t_p_history> m_vdHistories_Y;
@@ -302,7 +317,21 @@ public:
 	void setRobotData(const std::vector<double>& depth_meas,
 		const std::vector<double>& speed,
 		const std::vector<double>& vert,
-		const std::vector<double>& turn);
+		const std::vector<double>& turn,
+		const std::vector<double>& vdK_t,
+		const std::vector<double>& vdK_d1,
+		const std::vector<double>& vdm_0,
+		const std::vector<double>& vdm_1,
+		const std::vector<double>& vdr_1,
+		const std::vector<double>& vdK_omega,
+		const std::vector<double>& vdeta_up,
+		const std::vector<double>& vdeta_down,
+		const std::vector<double>& vdv_off,
+		const std::vector<double>& vdk_d,
+		const std::vector<double>& vdz_off,
+		const std::vector<double>& vdk_teth,
+		const std::vector<double>& vdk_vp,
+		const std::vector<double>& vdJ);
 };
 
 #endif /* BELUGATRACKER_H */

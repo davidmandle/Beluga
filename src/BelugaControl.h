@@ -69,13 +69,4 @@ protected:
     static std::string s_sName;
 };
 
-BelugaWaypointControlLaw* belugaWaypointControlLawFactory(unsigned int bot_num,
-                                                          unsigned int law_num);
-BelugaLowLevelControlLaw* belugaLowLevelControlLawFactory(unsigned int bot_num,
-                                                          unsigned int law_num);
-BelugaBoundaryControlLaw* belugaBoundaryControlLawFactory(unsigned int bot_num,
-                                                          unsigned int law_num,
-                                                          const char* force_file_name_x,
-                                                          const char* force_file_name_y);
-
 #endif // BELUGA_CONTROL_H

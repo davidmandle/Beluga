@@ -11,27 +11,6 @@ std::string BelugaWaypointControlLaw::s_sName("Beluga Waypoint Controller\n");
 std::string BelugaLowLevelControlLaw::s_sName("Beluga Low Level Controller\n");
 std::string BelugaBoundaryControlLaw::s_sName("Beluga Boundary Controller\n");
 
-BelugaWaypointControlLaw* belugaWaypointControlLawFactory(unsigned int bot_num,
-                                                          unsigned int law_num)
-{
-    return new BelugaWaypointControlLaw();
-}
-
-BelugaLowLevelControlLaw* belugaLowLevelControlLawFactory(unsigned int bot_num,
-                                                          unsigned int law_num)
-{
-    return new BelugaLowLevelControlLaw();
-}
-
-BelugaBoundaryControlLaw* belugaBoundaryControlLawFactory(unsigned int bot_num,
-                                                          unsigned int law_num,
-                                                          const char* force_file_name_x,
-                                                          const char* force_file_name_y)
-{
-    return new BelugaBoundaryControlLaw(force_file_name_x, force_file_name_y);
-}
-
-
 BelugaWaypointControlLaw::BelugaWaypointControlLaw()  // includes HITL timing control (instead of having a separate ControlLaw)
     : mt_ControlLaw(3 /* # control inputs */,
                     4 /* # parameters */),
@@ -122,7 +101,7 @@ mt_dVector_t BelugaWaypointControlLaw::doControl(const mt_dVector_t& state,
 
 BelugaLowLevelControlLaw::BelugaLowLevelControlLaw()
     : mt_ControlLaw(3 /* # control inputs */,
-                    0 /* # parameters */),
+                    14 /* # parameters */), //K_t, K_d1, m_0, m_1, r_1, K_omega, eta_up, eta_down, v_off, k_d, z_off, k_teth, k_vp, J
       m_bActive(true)
 {
 }
@@ -134,6 +113,21 @@ mt_dVector_t BelugaLowLevelControlLaw::doControl(const mt_dVector_t& state,
     {
         return u_in;
     }
+
+	double K_t = m_vParameters[0];
+	double K_d1 = m_vParameters[1];
+	double m_0 = m_vParameters[2];
+	double m_1 = m_vParameters[3];
+	double r_1 = m_vParameters[4];
+	double K_omega = m_vParameters[5];
+	double eta_up = m_vParameters[6];
+	double eta_down = m_vParameters[7];
+	double v_off = m_vParameters[8];
+	double k_d = m_vParameters[9];
+	double z_off = m_vParameters[10];
+	double k_teth = m_vParameters[11];
+	double k_vp = m_vParameters[12];
+	double J = m_vParameters[13];
 
     mt_dVector_t u(BELUGA_CONTROL_SIZE, 0.0);
     
@@ -211,7 +205,7 @@ mt_dVector_t BelugaLowLevelControlLaw::doControl(const mt_dVector_t& state,
 BelugaBoundaryControlLaw::BelugaBoundaryControlLaw(const char* force_file_name_x,
                                                    const char* force_file_name_y)
 	: mt_ControlLaw(3 /* # control inputs */,
-					1 /* # parameters */),
+					1 /* # parameters */), //One parameter is m_eff for robot
 	  m_bActive(true),
 	  m_dGain(1e-6),    // must be calibrated for robots in tank
 	  m_dLastFx(0),
@@ -325,6 +319,8 @@ mt_dVector_t BelugaBoundaryControlLaw::doControl(const mt_dVector_t& state,
 	m_dLastFx = fx;  // for BelugaTrackerGUI visualization
 	m_dLastFy = fy;
 	
+	double m_eff = m_vParameters[0];
+
 	/* calculate control parameters */
 	double ax = m_dGain*fx/m_eff;
 	double ay = m_dGain*fy/m_eff;

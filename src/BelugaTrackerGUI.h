@@ -30,134 +30,131 @@ class BelugaControlFrame;
 
 class BelugaTrackerFrame : public MT_RobotFrameBase
 {
-protected:
-    BelugaTracker* m_pBelugaTracker;
+ protected:
+  BelugaTracker* m_pBelugaTracker;
+  MT_AgentStatesPublisher* m_pPublisher;
+  MT_AgentStatesSubscriber* m_pSubscriber;
 
-	double m_dGotoMaxSpeed;
-	double m_dGotoDistThreshold;
-	double m_dGotoTurningGain;
-	double m_dBoundaryGain;
-	std::string m_sForceFileNameX;
-	std::string m_sForceFileNameY;
+  double m_dGotoMaxSpeed;
+  double m_dGotoDistThreshold;
+  double m_dGotoTurningGain;
+  double m_dBoundaryGain;
+  std::string m_sForceFileNameX;
+  std::string m_sForceFileNameY;
+  MT_Choice m_MouseControlledRobot;
 
-    int m_iNToTrack;
-	int m_iGrabbedTrackedObj;
+  int m_iNToTrack;
+  int m_iGrabbedTrackedObj;
 
-    bool m_bControlActive;
-	bool m_bGotoActive;
-	double m_adGotoXC[BELUGA_NUM_BOTS][BELUGA_NUM_CAMS]; /* 4 cams * 4 bots */
-	double m_adGotoYC[BELUGA_NUM_BOTS][BELUGA_NUM_CAMS];
+  bool m_bControlActive;
+  bool m_bGotoActive;
+  double m_adGotoXC[MT_MAX_NROBOTS][BELUGA_NUM_CAMS];
+  double m_adGotoYC[MT_MAX_NROBOTS][BELUGA_NUM_CAMS];
 
-	bool m_bCamerasReady;
-    unsigned int m_uiaIndexMap[4];
+  bool m_bCamerasReady;
+  unsigned int m_uiaIndexMap[4];
 
-	MT_CameraSlaveFrame* m_pSlaves[4];
-	IplImage* m_pCameraFrames[4];
+  MT_CameraSlaveFrame* m_pSlaves[4];
+  IplImage* m_pCameraFrames[4];
 
-    MT_DataGroup* m_pSetupInfo;
-    std::string m_sQuad1CalibrationPath;
-    std::string m_sQuad1Camera;
-    std::string m_sQuad2CalibrationPath;
-	std::string m_sQuad2Camera;
-    std::string m_sQuad3CalibrationPath;
-	std::string m_sQuad3Camera;
-    std::string m_sQuad4CalibrationPath;
-	std::string m_sQuad4Camera;
+  MT_DataGroup* m_pSetupInfo;
+  std::string m_sQuad1CalibrationPath;
+  std::string m_sQuad1Camera;
+  std::string m_sQuad2CalibrationPath;
+  std::string m_sQuad2Camera;
+  std::string m_sQuad3CalibrationPath;
+  std::string m_sQuad3Camera;
+  std::string m_sQuad4CalibrationPath;
+  std::string m_sQuad4Camera;
 
-    std::string m_sQuad1MaskPath;
-    std::string m_sQuad2MaskPath;
-    std::string m_sQuad3MaskPath;
-    std::string m_sQuad4MaskPath;  
+  std::string m_sQuad1MaskPath;
+  std::string m_sQuad2MaskPath;
+  std::string m_sQuad3MaskPath;
+  std::string m_sQuad4MaskPath;  
 
-	bool m_bConnectSocket;
+  bool m_bConnectSocket;
 
-	void acquireFrames();
-	void runTracker();
+  void acquireFrames();
+  void runTracker();
+  
+  BELUGA_CONTROL_MODE m_ControlMode;
+  double m_adWaypointX[MT_MAX_NROBOTS];
+  double m_adWaypointY[MT_MAX_NROBOTS];
+  double m_adWaypointZ[MT_MAX_NROBOTS];
+  double m_adSpeedCommand[4];
+  double m_adOmegaCommand[4];
+  double m_adZDotCommand[4];    
+  void manageIPCConnection();
+  bool tryIPCConnect();
+  void sendRobotDataToTracker();
 
-    belugaIPCClient m_IPCClient;
-    MT_AgentStatesPublisher publisher;
-    MT_AgentStatesSubscriber subscriber;
-    MT_AgentStates received_agent_states;
-    BELUGA_CONTROL_MODE m_ControlMode;
-    double m_adWaypointX[4];
-    double m_adWaypointY[4];
-    double m_adWaypointZ[4];
-    double m_adSpeedCommand[4];
-    double m_adOmegaCommand[4];
-    double m_adZDotCommand[4];    
-    void manageIPCConnection();
-    bool tryIPCConnect();
-    void sendRobotDataToTracker();
+  mt_Controller m_Controller;  
+  BelugaBoundaryControlLaw* m_apBoundaryController[MT_MAX_NROBOTS];
+  BelugaLowLevelControlLaw* m_apLowLevelController[MT_MAX_NROBOTS];
+  void initController();
 
-    mt_Controller m_Controller;
-    BelugaWaypointControlLaw* m_apWaypointController[4];
-	BelugaBoundaryControlLaw* m_apBoundaryController[4];
-    BelugaLowLevelControlLaw* m_apLowLevelController[4];
-    void initController();
+  BelugaControlFrame* m_pBelugaControlFrame;
+  void doCommonGLDrawing(int slave_index);
+  bool doCommonMouseCallback(wxMouseEvent& event,
+			     double viewport_x,
+			     double viewport_y,
+			     int slave_index);
+  void setWaypointFromMouseClick(double viewport_x,
+				 double viewport_y,
+				 int slave_index);
 
-    BelugaControlFrame* m_pBelugaControlFrame;
-    void doCommonGLDrawing(int slave_index);
-    bool doCommonMouseCallback(wxMouseEvent& event,
-                               double viewport_x,
-                               double viewport_y,
-                               int slave_index);
-    void setWaypointFromMouseClick(double viewport_x,
-                                   double viewport_y,
-                                   int slave_index);
-
-    void stopAllRobots();
+  void stopAllRobots();
     
 
-public:
-    BelugaTrackerFrame(wxFrame* parent,
-                         wxWindowID id = wxID_ANY,
-                         const wxString& title = wxT("View in Quadrant I"), 
-                         const wxPoint& pos = wxDefaultPosition, 
-                         const wxSize& size = wxSize(640,480),     
-                         long style = MT_FIXED_SIZE_FRAME);
+ public:
+  BelugaTrackerFrame(wxFrame* parent,
+		     wxWindowID id = wxID_ANY,
+		     const wxString& title = wxT("View in Quadrant I"), 
+		     const wxPoint& pos = wxDefaultPosition, 
+		     const wxSize& size = wxSize(640,480),     
+		     long style = MT_FIXED_SIZE_FRAME);
 
-    virtual ~BelugaTrackerFrame();
+  virtual ~BelugaTrackerFrame();
 
-	void doUserQuit();
+  void doUserQuit();
 
-    void makeFileMenu(wxMenu* file_menu);
+  void makeFileMenu(wxMenu* file_menu);
 
-    void doRobotTimedEvents();
+  void doRobotTimedEvents();
 
-    void initTracker();
-    void initUserData();
+  void initTracker();
+  void initUserData();
 
-	void doUserStep();
-	void doUserControl();
-	void HandleNewMessage(MT_AgentStates agent_states);
-	void doUserGLDrawing();
-	void doSlaveGLDrawing(int slave_index);
+  void doUserStep();
+  void doUserControl();
+  void doUserGLDrawing();
+  void doSlaveGLDrawing(int slave_index);
 
-    void doIPCExchange();
+  void doIPCExchange();
 
-    void readUserXML();
-    void writeUserXML();
+  void deactivateControl();
+  void activateMouseControl();
+  void activateExternalControl();
 
-    MT_RobotBase* getNewRobot(const char* config, const char* name);
+  void readUserXML();
+  void writeUserXML();
 
-    void handleCommandLineArguments(int argc, wxChar** argv);
-	void updateRobotStatesFromTracker();
+  MT_RobotBase* getNewRobot(const char* config, const char* name);
 
-	bool doKeyboardCallback(wxKeyEvent &event);
-	bool doMouseCallback(wxMouseEvent& event, double viewport_x, double viewport_y);
+  void handleCommandLineArguments(int argc, wxChar** argv);
+  void updateRobotStatesFromTracker();
 
-	bool doSlaveKeyboardCallback(wxKeyEvent &event, int slave_index);
-	bool doSlaveMouseCallback(wxMouseEvent& event, double viewport_x, double viewport_y, int slave_index);
+  bool doKeyboardCallback(wxKeyEvent &event);
+  bool doMouseCallback(wxMouseEvent& event, double viewport_x, double viewport_y);
+
+  bool doSlaveKeyboardCallback(wxKeyEvent &event, int slave_index);
+  bool doSlaveMouseCallback(wxMouseEvent& event, double viewport_x, double viewport_y, int slave_index);
     
-   /* menu callbacks */
-	void onMenuAssign(wxCommandEvent& event);
-    void onMenuFileCamSetup(wxCommandEvent& event);
+  /* menu callbacks */
+  void onMenuAssign(wxCommandEvent& event);
+  void onMenuFileCamSetup(wxCommandEvent& event);
 
-    MT_ControlFrameBase* createControlDialog();
-
-    bool toggleControlActive();
-    bool toggleIPCActive();    
-    
+  MT_ControlFrameBase* createControlDialog();    
 };
 
 
@@ -167,35 +164,34 @@ public:
 
 class BelugaControlFrame: public MT_RobotControlFrameBase
 {
-	friend class MT_ControlFrameBase;
-	friend class MT_FrameBase;
-	friend class MT_RobotFrameBase;
-    friend class BelugaTrackerFrame;
+  friend class MT_ControlFrameBase;
+  friend class MT_FrameBase;
+  friend class MT_RobotFrameBase;
+  friend class BelugaTrackerFrame;
 
-private:
-    BelugaTrackerFrame* m_pBelugaTrackerFrame;
+ private:
+  BelugaTrackerFrame* m_pBelugaTrackerFrame;
 
-    wxToggleButton* m_pControlActiveButton;
-    wxToggleButton* m_pIPCActiveButton;    
+  wxButton* m_pControlActiveButton;
+  wxButton* m_pMouseControlActiveButton;    
+  wxButton* m_pExternalControlActiveButton;    
 
-public:
+ public:
 
-	BelugaControlFrame(BelugaTrackerFrame* parent,
-                       const int Buttons = MT_TCF_DEFAULT_BUTTONS,
-                       const wxPoint& pos = wxDefaultPosition, 
-                       const wxSize& size = wxSize(150,300));
-	virtual ~BelugaControlFrame(){};
+  BelugaControlFrame(BelugaTrackerFrame* parent,
+		     const int Buttons = MT_TCF_DEFAULT_BUTTONS,
+		     const wxPoint& pos = wxDefaultPosition, 
+		     const wxSize& size = wxSize(150,300));
+  virtual ~BelugaControlFrame(){};
 
-	virtual unsigned int createButtons(wxBoxSizer* pSizer, wxPanel* pPanel);
+  virtual unsigned int createButtons(wxBoxSizer* pSizer, wxPanel* pPanel);
 
-    virtual void onControlActiveButtonClicked(wxCommandEvent& WXUNUSED(event));
-    virtual void onIPCActiveButtonClicked(wxCommandEvent& WXUNUSED(event));
+  virtual void onControlActiveButtonClicked(wxCommandEvent& WXUNUSED(event));
+  virtual void onMouseControlActiveButtonClicked(wxCommandEvent& WXUNUSED(event));
+  virtual void onExternalControlActiveButtonClicked(wxCommandEvent& WXUNUSED(event));
 
-    void setControlActive(bool value);
-    void setIPCActive(bool value);    
 
-	virtual void enableButtons();
-	virtual void enableControlButton();
+  virtual void enableButtons();
 
 };
 
@@ -207,11 +203,11 @@ public:
 class BelugaTrackerApp
 : public MT_AppBase
 {
-public:
-    MT_FrameWithInit* createMainFrame()
-    {
-        return new BelugaTrackerFrame(NULL);
-    };
+ public:
+  MT_FrameWithInit* createMainFrame()
+  {
+    return new BelugaTrackerFrame(NULL);
+  };
 };
 
 
