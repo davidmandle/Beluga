@@ -406,8 +406,6 @@ void BelugaTrackerFrame::doUserControl()
 {    
   std::vector<double> u(BELUGA_CONTROL_SIZE, 0.0);
 
-
-
   if(!m_pTracker)
     {
       return;
@@ -489,11 +487,9 @@ void BelugaTrackerFrame::doUserControl()
   }
   
   bool successful_publish = m_pPublisher->Publish(agent_states);
-  if (!successful_publish) {
-    return;
-  }
-  if (!m_pSubscriber->WaitForNewMessage(300)) {
-    // If we don't get a response, set all controls to 0 to stop robots
+
+  if (!m_pSubscriber->connected() || !m_pPublisher->connected()) {
+    // If publisher or subscriber is disconnected, stop all robots
     for(unsigned int i = 0; i < MT_MAX_NROBOTS; i++)
       {
 	if(m_Robots.IsPhysical(i))
@@ -504,10 +500,15 @@ void BelugaTrackerFrame::doUserControl()
       }
     return;
   }
-  
-  
-  MT_AgentStates received_agent_states = m_pSubscriber->PopMostRecentReceivedMessage();
-  m_pSubscriber->EmptyQueue();		
+
+  MT_AgentStates received_agent_states;
+  if (m_pSubscriber->NumberOfQueuedMessages() > 0) {
+	 received_agent_states = m_pSubscriber->PopMostRecentReceivedMessage();
+	  m_pSubscriber->EmptyQueue();
+  }
+  else {
+	  return;
+  }
 
   int received_state_count = 0;
   for (int i = 0; i < MT_MAX_NROBOTS; i++) {
@@ -515,9 +516,9 @@ void BelugaTrackerFrame::doUserControl()
       u[BELUGA_CONTROL_FWD_SPEED] = received_agent_states.agent_state(received_state_count).generic_agent_control().kinematics().speed();
       u[BELUGA_CONTROL_STEERING] = received_agent_states.agent_state(received_state_count).generic_agent_control().kinematics().omega();
       u[BELUGA_CONTROL_VERT_SPEED] = received_agent_states.agent_state(received_state_count).generic_agent_control().kinematics().z_dot();
-
+	  if (m_bControlActive) {
       if(received_agent_states.agent_state(received_state_count).generic_agent_control().has_waypoint())
-        {
+	  {
 	  MT_Waypoint waypoint = received_agent_states.agent_state(received_state_count).generic_agent_control().waypoint();
 	  double w = m_pBelugaTracker->getWaterDepth();
 	  m_adWaypointX[i] = waypoint.x();
@@ -545,7 +546,7 @@ void BelugaTrackerFrame::doUserControl()
 	    m_adGotoYC[i][cam_num] = BELUGA_WAYPOINT_NONE;
 	  }
       }            
-
+	  }
 
 
 
@@ -755,17 +756,21 @@ void BelugaTrackerFrame::setWaypointFromMouseClick(double viewport_x,
                                                    double viewport_y,
                                                    int slave_index)
 {
+	if(m_bControlActive) {
+		return;
+	}
+
   int robot_index = m_MouseControlledRobot.GetIntValue();
+  m_adGotoXC[robot_index][slave_index] = viewport_x;
+  m_adGotoYC[robot_index][slave_index] =  m_ClientSize.GetHeight() - viewport_y;
   for (int i = 0; i < MT_MAX_NROBOTS; i++) {
-    if (i == robot_index) {
-      m_adGotoXC[robot_index][slave_index] = viewport_x;
-      m_adGotoYC[robot_index][slave_index] =  m_ClientSize.GetHeight() - viewport_y;
-    }
-    else {
-      m_adGotoXC[i][slave_index] = BELUGA_WAYPOINT_NONE;
-      m_adGotoYC[i][slave_index] =  BELUGA_WAYPOINT_NONE;
-      m_adWaypointX[i] = BELUGA_WAYPOINT_NONE;
+    if (i != robot_index) {
+		m_adWaypointX[i] = BELUGA_WAYPOINT_NONE;
       m_adWaypointY[i] = BELUGA_WAYPOINT_NONE;
+		for (int cam_num = 0; cam_num < BELUGA_NUM_CAMS; cam_num++) {
+      m_adGotoXC[i][cam_num] = BELUGA_WAYPOINT_NONE;
+      m_adGotoYC[i][cam_num] =  BELUGA_WAYPOINT_NONE;      
+		}
     }
   }
 
@@ -781,11 +786,11 @@ void BelugaTrackerFrame::setWaypointFromMouseClick(double viewport_x,
 							   slave_index);
   for(unsigned int i = 0; i < BELUGA_NUM_CAMS; i++)
     {  
-      m_pBelugaTracker->getCameraXYFromWorldXYandDepthFixedCamera(slave_index,
+      m_pBelugaTracker->getCameraXYFromWorldXYandDepthFixedCamera(i,
 								  &m_adGotoXC[robot_index][i],
 								  &m_adGotoYC[robot_index][i],
 								  m_adWaypointX[robot_index],
-								  m_adWaypointZ[robot_index],
+								  m_adWaypointY[robot_index],
 								  0, /* depth */
 								  false); /* no distortion */
     }
@@ -839,6 +844,7 @@ void BelugaTrackerFrame::doCommonGLDrawing(int slave_index)
 {
   double h = (double) m_ClientSize.GetHeight();
   glLineWidth(3.0);
+
   for(unsigned int i = 0; i < BELUGA_NUM_BOTS; i++)
     {
       if((m_adGotoXC[i][slave_index] >= 0 && m_adGotoYC[i][slave_index] >= 0 &&
